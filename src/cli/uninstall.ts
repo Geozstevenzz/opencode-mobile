@@ -5,6 +5,7 @@
 import {
   removePluginFromGlobalOpenCodeConfig,
   removeGlobalCommand,
+  resolveGlobalCommandPath,
 } from "./opencode-config.js";
 import { MOBILE_COMMAND_NAME } from "./mobile-command.js";
 import * as fs from "fs";
@@ -60,7 +61,8 @@ CONFIG LOCATION:
   ~/.config/opencode/opencode.json (or opencode.jsonc)
 
 COMMAND LOCATION:
-  ~/.config/opencode/commands/mobile.md
+  ~/.config/opencode/command/mobile.md on Windows
+  ~/.config/opencode/commands/mobile.md on macOS and Linux
 `);
 }
 
@@ -97,7 +99,7 @@ function checkIfInstalled(): {
   const jsonPath = path.join(configDir, "opencode.json");
   const configPath = fs.existsSync(jsoncPath) ? jsoncPath : jsonPath;
 
-  const commandPath = path.join(configDir, "commands", `${MOBILE_COMMAND_NAME}.md`);
+  const commandPath = resolveGlobalCommandPath(MOBILE_COMMAND_NAME);
 
   let pluginInstalled = false;
 
@@ -155,7 +157,7 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<void
     const jsoncPath = path.join(configDir, "opencode.jsonc");
     const jsonPath = path.join(configDir, "opencode.json");
     const configPath = fs.existsSync(jsoncPath) ? jsoncPath : jsonPath;
-    const commandPath = path.join(configDir, "commands", `${MOBILE_COMMAND_NAME}.md`);
+    const commandPath = resolveGlobalCommandPath(MOBILE_COMMAND_NAME);
 
     status = {
       pluginInstalled: fs.existsSync(configPath),

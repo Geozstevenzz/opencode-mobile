@@ -163,7 +163,8 @@ CONFIG LOCATION:
   ~/.config/opencode/opencode.json (or opencode.jsonc)
 
 COMMAND LOCATION:
-  ~/.config/opencode/commands/mobile.md
+  ~/.config/opencode/command/mobile.md on Windows
+  ~/.config/opencode/commands/mobile.md on macOS and Linux
 `);
 }
 

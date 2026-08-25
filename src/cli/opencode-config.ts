@@ -39,6 +39,19 @@ export interface RemoveCommandResult {
 
 const OPENCODE_SCHEMA_URL = "https://opencode.ai/config.json";
 
+/**
+ * OpenCode uses a singular command directory on Windows and a plural one on
+ * other supported platforms.
+ */
+export function resolveGlobalCommandDirectory(platform = process.platform): string {
+  const directoryName = platform === "win32" ? "command" : "commands";
+  return path.join(os.homedir(), ".config", "opencode", directoryName);
+}
+
+export function resolveGlobalCommandPath(commandName: string, platform = process.platform): string {
+  return path.join(resolveGlobalCommandDirectory(platform), `${commandName}.md`);
+}
+
 function resolveGlobalConfigPath(): {
   configPath: string;
   format: OpenCodeConfigFormat;
@@ -251,8 +264,7 @@ export function removePluginFromGlobalOpenCodeConfig(
 }
 
 export function removeGlobalCommand(commandName: string): RemoveCommandResult {
-  const commandsDir = path.join(os.homedir(), ".config", "opencode", "commands");
-  const commandPath = path.join(commandsDir, `${commandName}.md`);
+  const commandPath = resolveGlobalCommandPath(commandName);
 
   if (!fs.existsSync(commandPath)) {
     return {
@@ -273,8 +285,7 @@ export function installGlobalCommand(
   content: string,
   options: { dryRun?: boolean } = {},
 ): { commandPath: string; action: "created" | "updated" | "noop" } {
-  const commandsDir = path.join(os.homedir(), ".config", "opencode", "commands");
-  const commandPath = path.join(commandsDir, `${commandName}.md`);
+  const commandPath = resolveGlobalCommandPath(commandName);
 
   const existed = fs.existsSync(commandPath);
 
@@ -297,7 +308,7 @@ export function installGlobalCommand(
   }
 
   if (!options.dryRun) {
-    fs.mkdirSync(commandsDir, { recursive: true });
+    fs.mkdirSync(path.dirname(commandPath), { recursive: true });
     fs.writeFileSync(commandPath, content, "utf-8");
   }
 

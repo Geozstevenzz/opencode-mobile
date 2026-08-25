@@ -33,7 +33,8 @@ npx opencode-mobile install
 ✅ Updated ~/.config/opencode/opencode.json
    plugin: ["opencode-mobile@latest"]
 
-✅ Created /mobile command at ~/.config/opencode/commands/mobile.md
+✅ Created /mobile command at ~/.config/opencode/command/mobile.md on Windows
+   (or ~/.config/opencode/commands/mobile.md on macOS and Linux)
 
 🚀 Setting up tunnel provider for mobile notifications...
 
@@ -64,7 +65,7 @@ opencode attach
 
 **What you'll see:**
 ```
-[opencode-mobile] v1.3.10
+[opencode-mobile] v1.4.1
 [PushPlugin][Mobile] Entry loaded: index.ts
 
 Connecting to OpenCode...
