@@ -10,13 +10,16 @@ export interface InstallPluginOptions {
   dryRun?: boolean;
 }
 
+export type OpenCodePluginTuple = [string, Record<string, unknown>];
+export type OpenCodePluginEntry = string | OpenCodePluginTuple;
+
 export interface InstallPluginResult {
   configPath: string;
   format: OpenCodeConfigFormat;
   action: "created" | "updated" | "noop";
   pluginSpec: string;
-  pluginsBefore: string[];
-  pluginsAfter: string[];
+  pluginsBefore: OpenCodePluginEntry[];
+  pluginsAfter: OpenCodePluginEntry[];
 }
 
 export interface RemovePluginOptions {
@@ -28,8 +31,8 @@ export interface RemovePluginResult {
   format: OpenCodeConfigFormat;
   action: "removed" | "noop";
   pluginSpec: string;
-  pluginsBefore: string[];
-  pluginsAfter: string[];
+  pluginsBefore: OpenCodePluginEntry[];
+  pluginsAfter: OpenCodePluginEntry[];
 }
 
 export interface RemoveCommandResult {
@@ -70,9 +73,23 @@ function resolveGlobalConfigPath(): {
   return { configPath: jsonPath, format: "json", existed: false };
 }
 
-function normalizePluginList(value: unknown): string[] {
+function isOpenCodePluginTuple(value: unknown): value is OpenCodePluginTuple {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    typeof value[0] === "string" &&
+    value[1] !== null &&
+    typeof value[1] === "object" &&
+    !Array.isArray(value[1])
+  );
+}
+
+function normalizePluginList(value: unknown): OpenCodePluginEntry[] {
   if (Array.isArray(value)) {
-    return value.filter((v): v is string => typeof v === "string");
+    return value.filter(
+      (entry): entry is OpenCodePluginEntry =>
+        typeof entry === "string" || isOpenCodePluginTuple(entry),
+    );
   }
   if (typeof value === "string") {
     return [value];
@@ -80,10 +97,17 @@ function normalizePluginList(value: unknown): string[] {
   return [];
 }
 
-function upsertPlugin(plugins: string[], pluginSpec: string): { next: string[]; changed: boolean } {
+function isMatchingPluginSpec(entry: OpenCodePluginEntry, name: string): boolean {
+  return typeof entry === "string" && (entry === name || entry.startsWith(`${name}@`));
+}
+
+function upsertPlugin(
+  plugins: OpenCodePluginEntry[],
+  pluginSpec: string,
+): { next: OpenCodePluginEntry[]; changed: boolean } {
   const name = pluginSpec.split("@")[0] || pluginSpec;
   const next = [...plugins];
-  const existingIndex = next.findIndex((p) => p === name || p.startsWith(`${name}@`));
+  const existingIndex = next.findIndex((entry) => isMatchingPluginSpec(entry, name));
   if (existingIndex >= 0) {
     const changed = next[existingIndex] !== pluginSpec;
     next[existingIndex] = pluginSpec;
@@ -106,7 +130,7 @@ export function installPluginToGlobalOpenCodeConfig(
   const dir = path.dirname(configPath);
 
   if (!existed) {
-    const pluginsBefore: string[] = [];
+    const pluginsBefore: OpenCodePluginEntry[] = [];
     const { next: pluginsAfter } = upsertPlugin(pluginsBefore, pluginSpec);
     const initial = {
       $schema: OPENCODE_SCHEMA_URL,
@@ -181,9 +205,12 @@ export function installPluginToGlobalOpenCodeConfig(
   };
 }
 
-function removePlugin(plugins: string[], pluginSpec: string): { next: string[]; changed: boolean } {
+function removePlugin(
+  plugins: OpenCodePluginEntry[],
+  pluginSpec: string,
+): { next: OpenCodePluginEntry[]; changed: boolean } {
   const name = pluginSpec.split("@")[0] || pluginSpec;
-  const existingIndex = plugins.findIndex((p) => p === name || p.startsWith(`${name}@`));
+  const existingIndex = plugins.findIndex((entry) => isMatchingPluginSpec(entry, name));
   if (existingIndex === -1) {
     return { next: plugins, changed: false };
   }
